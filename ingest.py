@@ -2,6 +2,7 @@ import os
 import glob
 from typing import List
 from dotenv import load_dotenv
+from concurrent.futures import ThreadPoolExecutor
 
 from langchain.document_loaders import (
     CSVLoader,
@@ -62,8 +63,10 @@ def load_documents(source_dir: str) -> List[Document]:
         all_files.extend(
             glob.glob(os.path.join(source_dir, f"**/*{ext}"), recursive=True)
         )
-    return [load_single_document(file_path) for file_path in all_files]
+    with ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
+        documents = list(executor.map(load_single_document, all_files))
 
+    return documents
 
 def main():
     # Load environment variables
